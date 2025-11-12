@@ -9,7 +9,7 @@
 
 ## The Problem
 
-Claude Code is brilliant, but it's **stateless**. Every session starts from scratch.
+[Claude Code](https://github.com/anthropics/claude-code) is brilliant, but it's **stateless**. Every session starts from scratch.
 
 You're the tour guide, and Claude is the tourist who keeps asking for directions to the same place.
 
@@ -245,7 +245,7 @@ Session logs clear on new session start. If needed:
 
 ## Contributing
 
-Contributions welcome! Areas for improvement:
+Contributions welcome!
 
 **To contribute:**
 1. Fork the repo

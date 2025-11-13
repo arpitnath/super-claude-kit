@@ -3,7 +3,7 @@
 # Works both locally (for testing) and remotely (curl | bash)
 # Author: Arpit Nath
 
-set -euo pipefail
+set -eo pipefail
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🚀 Super Claude Kit Installation"
@@ -19,12 +19,15 @@ GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH"
 INSTALL_DIR="$(pwd)"
 
 # Get script directory (handle both local execution and piped curl)
+# Temporarily disable -u flag to check BASH_SOURCE safely
+set +u
 if [ -n "${BASH_SOURCE[0]:-}" ]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 else
   # Piped from curl, no source file
   SCRIPT_DIR=""
 fi
+set -u
 
 # Detect installation mode
 INSTALL_MODE="remote"

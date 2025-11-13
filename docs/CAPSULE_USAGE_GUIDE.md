@@ -15,49 +15,65 @@ The capsule injection appears automatically before each prompt. Use it to:
 - Recall sub-agent findings
 - Reference discoveries made earlier in session
 
-## 📋 When to Log (Self-Reporting Pattern)
+## 📋 Auto-Logging (Automatic Context Tracking)
 
-### 1. After Using Read/Edit/Write Tools
+**NEW: File access and sub-agent results are logged automatically!**
 
-**Log file access immediately after tool use:**
+The PostToolUse hook automatically logs:
+- Read operations
+- Edit operations
+- Write operations
+- Task tool (sub-agent) completions
+- TodoWrite task updates
+
+**You no longer need to manually call log-file-access.sh or log-subagent.sh!**
+
+### What Gets Logged Automatically:
+
+**File Operations:**
+- Read tool automatically logs to session_files.log
+- Edit tool automatically logs to session_files.log
+- Write tool automatically logs to session_files.log
+
+**Sub-Agent Results:**
+- Task tool automatically logs to session_subagents.log
+- Summary extracted from agent output (first 200 chars)
+
+**Task Updates:**
+- TodoWrite automatically logs in_progress tasks to session_tasks.log
+
+### Manual Logging (Still Supported)
+
+You can still manually log if needed:
 
 ```bash
-# Just read a file
-./.claude/hooks/log-file-access.sh "server/src/main.ts" "read"
+# Optional: Manual file logging (if PostToolUse hook disabled)
+./.claude/hooks/log-file-access.sh "path/to/file" "read|edit|write"
 
-# Just edited a file
-./.claude/hooks/log-file-access.sh "server/src/auth/auth.service.ts" "edit"
-
-# Just created a new file
-./.claude/hooks/log-file-access.sh ".claude/new-hook.sh" "write"
+# Optional: Manual sub-agent logging (if PostToolUse hook disabled)
+./.claude/hooks/log-subagent.sh "Explore" "Found important patterns"
 ```
 
-**When to log:**
-- ✅ After reading important reference files (CLAUDE.md, architecture docs)
-- ✅ After editing implementation files
-- ✅ After creating new files
-- ❌ Skip logging for quick bash outputs or transient reads
+### Required Manual Logging:
 
-### 2. After Sub-Agent Completes
-
-**Log sub-agent results with key findings:**
+**Discoveries (Still Manual):**
+You must manually log discoveries - Claude decides what's important:
 
 ```bash
-# Explore agent found something important
-./.claude/hooks/log-subagent.sh "Explore" "Authentication flow in server/src/auth/, uses JWT + Redis"
+# Pattern discoveries
+./.claude/hooks/log-discovery.sh "pattern" "All hooks use set -euo pipefail"
 
-# Plan agent created implementation strategy
-./.claude/hooks/log-subagent.sh "Plan" "5-step plan: schema → API → validation → UI → tests"
+# Architectural insights
+./.claude/hooks/log-discovery.sh "architecture" "System uses microservices"
 
-# Specialized agent completed analysis
-./.claude/hooks/log-subagent.sh "architecture-explorer" "System uses 3-tier agent hierarchy"
+# Important decisions
+./.claude/hooks/log-discovery.sh "decision" "Using JWT for authentication"
 ```
 
-**When to log:**
-- ✅ After Task tool completes with useful findings
-- ✅ When sub-agent discovers architecture patterns
-- ✅ When sub-agent identifies files/locations
-- ❌ Skip if sub-agent didn't find anything useful
+**Task Status (If Not Using TodoWrite):**
+```bash
+./.claude/hooks/log-task.sh "in_progress" "Implementing auth system"
+```
 
 ### 3. After Key Discoveries
 

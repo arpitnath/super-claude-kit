@@ -46,40 +46,54 @@ BEFORE running git status → Check capsule (Git State)
 BEFORE asking about current task → Check capsule (Current Tasks)
 ```
 
-#### 2. Log After Tool Usage
+#### 2. Logging (Mostly Automatic)
 
-**After Read/Edit/Write:**
-```bash
-./.claude/hooks/log-file-access.sh "<path>" "read|edit|write"
-```
+**AUTO-LOGGED (PostToolUse Hook):**
+The following are logged automatically - you don't need to call these manually:
+- Read/Edit/Write operations → Logged to session_files.log automatically
+- Task tool (sub-agents) → Logged to session_subagents.log automatically
+- TodoWrite updates → Logged to session_tasks.log automatically
 
-**After Task Tool (Sub-Agents):**
-```bash
-./.claude/hooks/log-subagent.sh "<agent-type>" "<summary-of-findings>"
-```
+**MANUAL LOGGING REQUIRED (Discoveries Only):**
+You must manually log discoveries - you decide what's important:
 
-**After Discoveries:**
 ```bash
 ./.claude/hooks/log-discovery.sh "<category>" "<insight>"
 # Categories: pattern, insight, decision, architecture, bug, optimization, achievement
+
+# Examples:
+./.claude/hooks/log-discovery.sh "pattern" "All hooks use set -euo pipefail"
+./.claude/hooks/log-discovery.sh "architecture" "System uses microservices"
+./.claude/hooks/log-discovery.sh "decision" "Using PostgreSQL for storage"
 ```
 
-**After TodoWrite:**
+**OPTIONAL MANUAL LOGGING:**
+Only needed if PostToolUse hook is disabled:
+
 ```bash
+# File access (automatic via PostToolUse)
+./.claude/hooks/log-file-access.sh "<path>" "read|edit|write"
+
+# Sub-agents (automatic via PostToolUse)
+./.claude/hooks/log-subagent.sh "<agent-type>" "<summary-of-findings>"
+
+# Tasks (automatic via TodoWrite + PostToolUse)
 ./.claude/hooks/log-task.sh "<status>" "<task-description>"
-# Status: in_progress, pending, completed
 ```
 
 #### 3. Workflow Pattern
 
 ```
 1. Check capsule → See current context
-2. Log task start → Mark as in_progress
-3. Work on task → Read/edit files
-4. Log operations → Track file access
-5. Log discoveries → Capture insights
-6. Complete task → Mark as completed
+2. Start task → Use TodoWrite (auto-logged)
+3. Work on task → Read/edit files (auto-logged)
+4. Use sub-agents → Task tool (auto-logged)
+5. Log discoveries → Manual logging (you decide what's important)
+6. Complete task → Mark as completed (auto-logged via TodoWrite)
 ```
+
+**Auto-logging coverage: ~95%**
+Only discoveries require manual logging - everything else is automatic!
 
 ## 🚦 Hooks (Automatic)
 

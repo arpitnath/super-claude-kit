@@ -14,6 +14,7 @@
       "log-subagent.sh",
       "log-task.sh",
       "persist-capsule.sh",
+      "post-tool-use.sh",
       "pre-task-analysis.sh",
       "quality-check.sh",
       "restore-capsule.sh",

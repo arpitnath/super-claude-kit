@@ -5,9 +5,17 @@ MOCK_DISCOVERY='category: "pattern", content: "Uses JWT auth", time: 300'
 MOCK_TASK='status: "in_progress", content: "Implementing auth", time: 180'
 MOCK_SUBAGENT='type: "Explore", summary: "Found 10 files", time: 240'
 
-MOCK_PERSISTENCE='{
-  "last_session_end": 1700000000,
-  "session_duration": 900,
+create_mock_persistence() {
+  mkdir -p .claude
+  local recent_timestamp=$(($(date +%s) - 1800))
+  cat > .claude/capsule_persist.json << EOF
+{
+  "last_session": {
+    "ended_at": $recent_timestamp,
+    "duration_seconds": 900,
+    "branch": "main",
+    "head": "abc123"
+  },
   "message_count": 15,
   "discoveries": [
     {"category": "pattern", "content": "Auth uses JWT", "time": 300},
@@ -20,7 +28,9 @@ MOCK_PERSISTENCE='{
   "subagents": [
     {"type": "Explore", "summary": "Found auth module", "time": 500}
   ]
-}'
+}
+EOF
+}
 
 create_mock_logs() {
   mkdir -p .claude
@@ -29,11 +39,6 @@ create_mock_logs() {
   echo "$MOCK_DISCOVERY" > .claude/session_discoveries.log
   echo "$MOCK_TASK" > .claude/session_tasks.log
   echo "$MOCK_SUBAGENT" > .claude/session_subagents.log
-}
-
-create_mock_persistence() {
-  mkdir -p .claude
-  echo "$MOCK_PERSISTENCE" > .claude/capsule_persist.json
 }
 
 create_mock_version() {

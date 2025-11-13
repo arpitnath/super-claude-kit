@@ -12,6 +12,7 @@ TESTS=(
   "test-hooks.sh"
   "test-capsule.sh"
   "test-persistence.sh"
+  "test-auto-logging.sh"
 )
 
 TEST_NAMES=(
@@ -22,6 +23,7 @@ TEST_NAMES=(
   "Hook Execution"
   "Capsule Generation"
   "Cross-Session Persistence"
+  "Auto-Logging (PostToolUse)"
 )
 
 VERBOSE=false

@@ -167,26 +167,33 @@ These work without any manual intervention:
 - ✅ Capsule injection (only when state changes)
 - ✅ Cross-session persistence (automatic save/restore)
 - ✅ Journal sync (discoveries → Markdown)
+- ✅ **Auto-logging** (PostToolUse hook) - NEW!
+  - File access (Read/Edit/Write) logged automatically
+  - Sub-agent completions logged automatically
+  - TodoWrite updates logged automatically
+  - ~95% reduction in manual logging
 
-### Manual Logging (For Claude)
+### Manual Logging (Optional)
 
-Claude should explicitly log operations:
+Most logging is now automatic via PostToolUse hook.
 
+**Still required (discoveries):**
 ```bash
-# After reading a file
+# Manually log discoveries - Claude decides what's important
+./.claude/hooks/log-discovery.sh "pattern" "Auth uses JWT tokens"
+./.claude/hooks/log-discovery.sh "decision" "Using PostgreSQL for storage"
+```
+
+**Optional (if PostToolUse disabled):**
+```bash
+# File access (automatic if PostToolUse enabled)
 ./.claude/hooks/log-file-access.sh "path/to/file" "read"
 
-# After editing a file
-./.claude/hooks/log-file-access.sh "path/to/file" "edit"
-
-# After a discovery
-./.claude/hooks/log-discovery.sh "pattern" "Auth uses JWT tokens"
-
-# After task update
-./.claude/hooks/log-task.sh "in_progress" "Implementing auth"
-
-# After sub-agent completes
+# Sub-agent results (automatic if PostToolUse enabled)
 ./.claude/hooks/log-subagent.sh "Explore" "Found auth in server/auth/"
+
+# Task status (automatic if using TodoWrite)
+./.claude/hooks/log-task.sh "in_progress" "Implementing auth"
 ```
 
 ### Utilities

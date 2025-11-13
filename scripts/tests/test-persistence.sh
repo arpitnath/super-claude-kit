@@ -39,7 +39,7 @@ else
   fail "Test 4: Persistence file is valid JSON"
 fi
 
-if echo "$persist_content" | grep -q "last_session_end"; then
+if echo "$persist_content" | grep -q "last_session"; then
   pass "Test 5: Contains session end timestamp"
 else
   fail "Test 5: Contains session end timestamp"
@@ -61,14 +61,15 @@ else
   fail "Test 7: session-start restoration" "No restoration message"
 fi
 
-if echo "$output" | grep -q "JWT auth"; then
+if echo "$output" | grep -q "Auth uses JWT"; then
   pass "Test 8: Restores discoveries from previous session"
 else
   fail "Test 8: Discovery restoration"
 fi
 
+rm -f .claude/session_start.txt 2>/dev/null || true
 old_timestamp=$(($(date +%s) - 90000))
-echo "{\"last_session_end\": $old_timestamp}" > .claude/capsule_persist.json
+echo "{\"last_session\": {\"ended_at\": $old_timestamp, \"duration_seconds\": 100, \"branch\": \"main\", \"head\": \"abc123\"}, \"discoveries\": []}" > .claude/capsule_persist.json
 
 output=$(./.claude/hooks/session-start.sh 2>&1 || true)
 

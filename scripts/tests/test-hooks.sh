@@ -117,14 +117,14 @@ else
 fi
 
 ./.claude/hooks/log-task.sh "in_progress" "task" 2>/dev/null
-if [ -f ".claude/session_tasks.log" ]; then
+if [ -f ".claude/current_tasks.log" ]; then
   pass "Test 13: log-task.sh creates log"
 else
   fail "Test 13: log-task.sh creates log"
 fi
 
 ./.claude/hooks/log-subagent.sh "Explore" "summary" 2>/dev/null
-if [ -f ".claude/session_subagents.log" ]; then
+if [ -f ".claude/subagent_results.log" ]; then
   pass "Test 14: log-subagent.sh creates log"
 else
   fail "Test 14: log-subagent.sh creates log"

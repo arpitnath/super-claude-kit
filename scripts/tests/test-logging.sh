@@ -66,32 +66,32 @@ else
 fi
 
 ./.claude/hooks/log-task.sh "in_progress" "Test task" 2>/dev/null
-if assert_file_exists ".claude/session_tasks.log"; then
+if assert_file_exists ".claude/current_tasks.log"; then
   pass "Test 10: Task logging creates log file"
 else
   fail "Test 10: Task logging creates log file"
 fi
 
-if grep -q "Test task" .claude/session_tasks.log 2>/dev/null; then
+if grep -q "Test task" .claude/current_tasks.log 2>/dev/null; then
   pass "Test 11: Task log contains content"
 else
   fail "Test 11: Task log contains content"
 fi
 
 ./.claude/hooks/log-subagent.sh "Explore" "Test summary" 2>/dev/null
-if assert_file_exists ".claude/session_subagents.log"; then
+if assert_file_exists ".claude/subagent_results.log"; then
   pass "Test 12: Sub-agent logging creates log file"
 else
   fail "Test 12: Sub-agent logging creates log file"
 fi
 
-if grep -q "Test summary" .claude/session_subagents.log 2>/dev/null; then
+if grep -q "Test summary" .claude/subagent_results.log 2>/dev/null; then
   pass "Test 13: Sub-agent log contains summary"
 else
   fail "Test 13: Sub-agent log contains summary"
 fi
 
-log_count=$(find .claude -name "session_*.log" 2>/dev/null | wc -l | tr -d ' ')
+log_count=$(find .claude -name "*.log" 2>/dev/null | wc -l | tr -d ' ')
 if [ "$log_count" -ge 4 ]; then
   pass "Test 14: All log files created ($log_count files)"
 else

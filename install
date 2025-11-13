@@ -18,12 +18,17 @@ GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH"
 # Save current directory (where user wants to install)
 INSTALL_DIR="$(pwd)"
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get script directory (handle both local execution and piped curl)
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+  # Piped from curl, no source file
+  SCRIPT_DIR=""
+fi
 
 # Detect installation mode
 INSTALL_MODE="remote"
-if [ -f "$SCRIPT_DIR/manifest.json" ] && [ -d "$SCRIPT_DIR/hooks" ]; then
+if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/manifest.json" ] && [ -d "$SCRIPT_DIR/hooks" ]; then
   INSTALL_MODE="local"
   echo "📦 Local installation mode detected"
 else
@@ -291,9 +296,10 @@ if [ -f "$INSTALL_DIR/CLAUDE.md" ]; then
     echo "" >> "$INSTALL_DIR/CLAUDE.md"
     echo "---" >> "$INSTALL_DIR/CLAUDE.md"
     echo "" >> "$INSTALL_DIR/CLAUDE.md"
-    install_file "CLAUDE_TEMPLATE.md" "/tmp/claude_template.md"
-    cat /tmp/claude_template.md >> "$INSTALL_DIR/CLAUDE.md"
-    rm /tmp/claude_template.md
+    # Download template to .claude directory (not /tmp to avoid path issues)
+    install_file "CLAUDE_TEMPLATE.md" ".claude/CLAUDE_TEMPLATE.tmp"
+    cat "$INSTALL_DIR/.claude/CLAUDE_TEMPLATE.tmp" >> "$INSTALL_DIR/CLAUDE.md"
+    rm "$INSTALL_DIR/.claude/CLAUDE_TEMPLATE.tmp"
     echo "✓ Added Super Claude Kit section to CLAUDE.md"
   else
     echo "✓ CLAUDE.md already has Super Claude Kit integration"

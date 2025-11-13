@@ -118,7 +118,7 @@ Task tool with subagent_type="architecture-explorer"
 
 ```bash
 cd your-project
-curl -sL https://raw.githubusercontent.com/arpitnath/super-claude-kit/main/install | bash
+curl -sL https://raw.githubusercontent.com/arpitnath/super-claude-kit/master/install | bash
 ```
 
 **That's it.** Next time you start Claude Code:

@@ -12,7 +12,7 @@ echo ""
 
 # Configuration
 GITHUB_REPO="arpitnath/super-claude-kit"
-GITHUB_BRANCH="main"
+GITHUB_BRANCH="master"
 GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH"
 
 # Save current directory (where user wants to install)

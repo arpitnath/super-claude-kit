@@ -35,8 +35,8 @@ if [ -f "$HOME/.claude/bin/dependency-scanner" ]; then
 
   "$HOME/.claude/bin/dependency-scanner" \
     --path "$(pwd)" \
-    --output .claude/dep-graph.json \
-    2>&1 | grep -E "^(✅|⚠️|🗑️|⏱️)" || true
+    --output .claude/dep-graph.toon \
+    2>&1 | grep -E "^(Dependency|Files|Circular|Potentially)" || true
 
   echo ""
 fi
@@ -86,7 +86,7 @@ if [ -f "README.md" ]; then
     echo "   • Documentation: README.md"
 fi
 echo "   • Super Claude Kit docs: .claude/docs/"
-if [ -f ".claude/dep-graph.json" ]; then
+if [ -f ".claude/dep-graph.toon" ]; then
     echo "   • Dependency tools: .claude/tools/ (query-deps, impact-analysis, find-circular, find-dead-code)"
 fi
 echo ""

@@ -13,6 +13,9 @@ TESTS=(
   "test-capsule.sh"
   "test-persistence.sh"
   "test-auto-logging.sh"
+  "test-tool-runner.sh"
+  "test-dependency-scanner.sh"
+  "test-tool-integration.sh"
 )
 
 TEST_NAMES=(
@@ -24,6 +27,9 @@ TEST_NAMES=(
   "Capsule Generation"
   "Cross-Session Persistence"
   "Auto-Logging (PostToolUse)"
+  "Tool Runner (v2.0)"
+  "Dependency Scanner (v2.0)"
+  "Tool Integration (v2.0)"
 )
 
 VERBOSE=false
@@ -45,7 +51,7 @@ for arg in "$@"; do
 done
 
 echo "========================================================================"
-echo "Super Claude Kit Test Suite v1.1.0"
+echo "Super Claude Kit Test Suite v2.0.0"
 echo "========================================================================"
 echo ""
 echo "Running tests..."

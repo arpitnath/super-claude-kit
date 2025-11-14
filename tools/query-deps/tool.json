@@ -19,10 +19,10 @@
     ]
   },
   "requires": {
-    "graph": "~/.claude/dep-graph.json"
+    "graph": "~/.claude/dep-graph.toon"
   },
   "permissions": {
-    "read": ["~/.claude/dep-graph.json"],
+    "read": ["~/.claude/dep-graph.toon"],
     "write": [],
     "network": false
   },

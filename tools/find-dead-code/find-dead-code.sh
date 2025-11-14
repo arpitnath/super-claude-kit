@@ -1,50 +1,41 @@
-#!/bin/bash
-# Find potentially dead code (files not imported by anyone)
-# Usage: find-dead-code.sh
+#!/usr/bin/env bash
+# Find dead code (unused files)
 
-set -euo pipefail
+set -eo pipefail
 
-GRAPH=".claude/dep-graph.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(cd "$SCRIPT_DIR/../../lib" && pwd)"
 
-if [ ! -f "$GRAPH" ]; then
-  echo "❌ Dependency graph not built"
-  exit 1
+source "$LIB_DIR/toon-parser.sh"
+
+GRAPH_FILE="${DEP_GRAPH_FILE:-$HOME/.claude/dep-graph.toon}"
+
+if [ $# -ge 1 ]; then
+    GRAPH_FILE="$1"
 fi
 
-# Get dead code files
-DEAD_FILES=$(cat "$GRAPH" | jq -r '.DeadCode[]?' 2>/dev/null || echo "")
-DEAD_COUNT=0
-
-if [ -n "$DEAD_FILES" ]; then
-  DEAD_COUNT=$(echo "$DEAD_FILES" | wc -l | tr -d ' ')
+if [ ! -f "$GRAPH_FILE" ]; then
+    echo "Error: Graph file not found: $GRAPH_FILE"
+    echo "Run the dependency scanner first to generate the graph"
+    exit 1
 fi
 
-if [ "$DEAD_COUNT" -eq 0 ]; then
-  echo "✅ No dead code detected"
-  echo ""
-  echo "All files are imported by at least one other file or are entry points."
-  exit 0
+DEADCODE=$(toon_get_deadcode "$GRAPH_FILE")
+
+if [ -z "$DEADCODE" ]; then
+    echo "No dead code found - all files are imported somewhere"
+    exit 0
 fi
 
-echo "🗑️  Found $DEAD_COUNT potentially unused files"
+DEAD_COUNT=$(echo "$DEADCODE" | wc -l | tr -d ' ')
+
+echo "Found $DEAD_COUNT potentially unused file(s):"
 echo ""
 
-# List all dead files (simple approach without grouping)
-echo "$DEAD_FILES" | while read -r file; do
-  echo "  • $file"
+echo "$DEADCODE" | while IFS= read -r dead_file; do
+    echo "  - $dead_file"
 done
 echo ""
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "⚠️  Before deleting, verify these are NOT:"
-echo ""
-echo "  • Entry points (main.ts, index.ts, etc.)"
-echo "  • Test files that are run separately"
-echo "  • Configuration files"
-echo "  • Files used by build tools"
-echo "  • Recently added files"
-echo ""
-echo "💡 To verify a file is safe to delete:"
-echo "   1. Check git history: git log <file>"
-echo "   2. Search for dynamic imports: grep -r \"<filename>\""
-echo "   3. Check if it's referenced in configs"
+echo "Note: These files are not imported by any other file in the project."
+echo "They may be entry points or genuinely unused code."

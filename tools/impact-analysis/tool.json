@@ -19,14 +19,14 @@
     ]
   },
   "requires": {
-    "graph": "~/.claude/dep-graph.json"
+    "graph": "~/.claude/dep-graph.toon"
   },
   "outputs": {
     "format": "text",
     "content": "Risk level (HIGH/MEDIUM/LOW) and list of dependent files"
   },
   "permissions": {
-    "read": ["~/.claude/dep-graph.json"],
+    "read": ["~/.claude/dep-graph.toon"],
     "write": [],
     "network": false
   },

@@ -11,13 +11,17 @@
     "command": "dependency-scanner",
     "flags": {
       "--path": "Path to scan (default: current directory)",
-      "--output": "Output JSON file path (default: ~/.claude/dep-graph.json)",
+      "--output": "Output file path (default: ~/.claude/dep-graph.toon, supports .json or .toon)",
       "--verbose": "Enable verbose output",
       "--version": "Show version information"
     },
     "examples": [
       {
-        "description": "Scan current directory",
+        "description": "Scan current directory (TOON format)",
+        "command": "dependency-scanner --path . --output ./deps.toon"
+      },
+      {
+        "description": "Scan with JSON format",
         "command": "dependency-scanner --path . --output ./deps.json"
       },
       {
@@ -27,18 +31,18 @@
     ]
   },
   "outputs": {
-    "format": "json",
-    "location": "~/.claude/dep-graph.json",
+    "format": "toon (default) or json",
+    "location": "~/.claude/dep-graph.toon",
     "schema": {
-      "Files": "map[string]FileNode",
-      "Circular": "[][]string (cycles)",
-      "DeadCode": "[]string (unused files)",
-      "LastUpdated": "timestamp"
+      "Files": "FILE:/path LANG:lang IMPORTS:... EXPORTS:... IMPORTEDBY:...",
+      "Circular": "CIRCULAR:path>path>path",
+      "DeadCode": "DEADCODE:/path",
+      "Metadata": "META:lastUpdated=timestamp"
     }
   },
   "permissions": {
     "read": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.go", "**/*.py"],
-    "write": ["~/.claude/dep-graph.json"],
+    "write": ["~/.claude/dep-graph.toon", "~/.claude/dep-graph.json"],
     "network": false
   },
   "autoRun": {

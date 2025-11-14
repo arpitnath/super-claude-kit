@@ -1,64 +1,69 @@
-#!/bin/bash
-# Query dependencies for a specific file
-# Usage: query-deps.sh <file-path>
+#!/usr/bin/env bash
+# Query dependencies - shows imports and importers for a file
 
-set -euo pipefail
+set -eo pipefail
 
-FILE_PATH="$1"
-GRAPH=".claude/dep-graph.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(cd "$SCRIPT_DIR/../../lib" && pwd)"
 
-if [ ! -f "$GRAPH" ]; then
-  echo "❌ Dependency graph not built"
-  echo "   Run: ./.claude/hooks/session-start.sh to build it"
-  exit 1
+source "$LIB_DIR/toon-parser.sh"
+
+GRAPH_FILE="${DEP_GRAPH_FILE:-$HOME/.claude/dep-graph.toon}"
+
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <file-path> [graph-file]"
+    echo ""
+    echo "Query dependency information for a file"
+    echo ""
+    echo "Arguments:"
+    echo "  file-path   Path to the file to query"
+    echo "  graph-file  Optional: path to TOON graph file (default: ~/.claude/dep-graph.toon)"
+    exit 1
 fi
 
-# Check if file exists in graph
-FILE_COUNT=$(cat "$GRAPH" | jq -r ".Files | has(\"$FILE_PATH\")" 2>/dev/null || echo "false")
-if [ "$FILE_COUNT" == "false" ]; then
-  echo "❌ File not found in dependency graph: $FILE_PATH"
-  exit 1
+TARGET_FILE="$1"
+if [ $# -ge 2 ]; then
+    GRAPH_FILE="$2"
 fi
 
-echo "📊 Dependencies for: $FILE_PATH"
+if [ ! -f "$GRAPH_FILE" ]; then
+    echo "Error: Graph file not found: $GRAPH_FILE"
+    echo "Run the dependency scanner first to generate the graph"
+    exit 1
+fi
+
+if ! toon_file_exists "$GRAPH_FILE" "$TARGET_FILE"; then
+    echo "Error: File not found in dependency graph: $TARGET_FILE"
+    exit 1
+fi
+
+LANGUAGE=$(toon_get_language "$GRAPH_FILE" "$TARGET_FILE")
+
+echo "File: $TARGET_FILE"
+echo "Language: $LANGUAGE"
 echo ""
 
-# Who imports this file?
-IMPORTERS=$(cat "$GRAPH" | jq -r ".Files[\"$FILE_PATH\"].ImportedBy[]?" 2>/dev/null || echo "")
-if [ -n "$IMPORTERS" ]; then
-  IMPORTER_COUNT=$(echo "$IMPORTERS" | wc -l | tr -d ' ')
-  echo "Imported by ($IMPORTER_COUNT files):"
-  echo "$IMPORTERS" | while read -r file; do
-    echo "  • $file"
-  done
+echo "Imports:"
+IMPORTS=$(toon_get_imports "$GRAPH_FILE" "$TARGET_FILE")
+if [ -z "$IMPORTS" ]; then
+    echo "  (none)"
 else
-  echo "⚠️  Not imported by any files (potential dead code)"
+    echo "$IMPORTS" | while IFS= read -r import; do
+        echo "  - $import"
+    done
 fi
-
 echo ""
 
-# What does this file import?
-IMPORTS=$(cat "$GRAPH" | jq -r ".Files[\"$FILE_PATH\"].Imports[]?.Path" 2>/dev/null || echo "")
-if [ -n "$IMPORTS" ]; then
-  IMPORT_COUNT=$(echo "$IMPORTS" | wc -l | tr -d ' ')
-  echo "Imports ($IMPORT_COUNT files/packages):"
-  echo "$IMPORTS" | while read -r file; do
-    echo "  • $file"
-  done
+echo "Imported by:"
+IMPORTERS=$(toon_get_importers "$GRAPH_FILE" "$TARGET_FILE")
+if [ -z "$IMPORTERS" ]; then
+    echo "  (none)"
 else
-  echo "No imports"
+    echo "$IMPORTERS" | while IFS= read -r importer; do
+        echo "  - $importer"
+    done
 fi
-
 echo ""
 
-# Exports
-EXPORTS=$(cat "$GRAPH" | jq -r ".Files[\"$FILE_PATH\"].Exports[]? | \"\\(.Name) (\\(.Type))\"" 2>/dev/null || echo "")
-if [ -n "$EXPORTS" ]; then
-  EXPORT_COUNT=$(echo "$EXPORTS" | wc -l | tr -d ' ')
-  echo "Exports ($EXPORT_COUNT symbols):"
-  echo "$EXPORTS" | while read -r export; do
-    echo "  • $export"
-  done
-else
-  echo "No exports"
-fi
+IMPORTER_COUNT=$(toon_count_importers "$GRAPH_FILE" "$TARGET_FILE")
+echo "Total importers: $IMPORTER_COUNT"

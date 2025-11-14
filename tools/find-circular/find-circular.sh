@@ -1,67 +1,41 @@
-#!/bin/bash
-# Find circular dependencies in the codebase
-# Usage: find-circular.sh
+#!/usr/bin/env bash
+# Find circular dependencies
 
-set -euo pipefail
+set -eo pipefail
 
-GRAPH=".claude/dep-graph.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(cd "$SCRIPT_DIR/../../lib" && pwd)"
 
-if [ ! -f "$GRAPH" ]; then
-  echo "❌ Dependency graph not built"
-  exit 1
+source "$LIB_DIR/toon-parser.sh"
+
+GRAPH_FILE="${DEP_GRAPH_FILE:-$HOME/.claude/dep-graph.toon}"
+
+if [ $# -ge 1 ]; then
+    GRAPH_FILE="$1"
 fi
 
-# Check for circular dependencies
-CIRCULAR_COUNT=$(cat "$GRAPH" | jq '.Circular | length' 2>/dev/null || echo "0")
-
-if [ "$CIRCULAR_COUNT" -eq 0 ]; then
-  echo "✅ No circular dependencies found"
-  echo ""
-  echo "Your dependency graph is clean!"
-  exit 0
+if [ ! -f "$GRAPH_FILE" ]; then
+    echo "Error: Graph file not found: $GRAPH_FILE"
+    echo "Run the dependency scanner first to generate the graph"
+    exit 1
 fi
 
-echo "⚠️  Found $CIRCULAR_COUNT circular dependency cycles"
+CIRCULAR=$(toon_get_circular "$GRAPH_FILE")
+
+if [ -z "$CIRCULAR" ]; then
+    echo "No circular dependencies found"
+    exit 0
+fi
+
+CYCLE_COUNT=$(echo "$CIRCULAR" | wc -l | tr -d ' ')
+
+echo "Found $CYCLE_COUNT circular dependency cycle(s):"
 echo ""
 
-# Display each cycle
-CYCLE_NUM=1
-cat "$GRAPH" | jq -r '.Circular[] | @json' 2>/dev/null | while read -r cycle; do
-  echo "Cycle #$CYCLE_NUM:"
-  CYCLE_ARRAY=$(echo "$cycle" | jq -r '.[]')
-
-  # Print cycle with arrows
-  FIRST_FILE=""
-  PREV_FILE=""
-  while IFS= read -r file; do
-    if [ -z "$FIRST_FILE" ]; then
-      FIRST_FILE="$file"
-      PREV_FILE="$file"
-      echo "  $file"
-    else
-      echo "    ↓"
-      echo "  $file"
-      PREV_FILE="$file"
-    fi
-  done <<< "$CYCLE_ARRAY"
-
-  # Close the cycle
-  echo "    ↓"
-  echo "  $FIRST_FILE (cycle back)"
-
-  echo ""
-  CYCLE_NUM=$((CYCLE_NUM + 1))
+INDEX=1
+echo "$CIRCULAR" | while IFS= read -r cycle; do
+    echo "Cycle $INDEX:"
+    echo "  $cycle" | tr '>' $'\n  → '
+    echo ""
+    INDEX=$((INDEX + 1))
 done
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "💡 How to fix circular dependencies:"
-echo ""
-echo "1. Extract shared code into a new module"
-echo "2. Use dependency injection"
-echo "3. Refactor to use interfaces/abstractions"
-echo "4. Consider architectural boundaries"
-echo ""
-echo "Circular dependencies can cause:"
-echo "  • Difficult testing"
-echo "  • Build/import issues"
-echo "  • Hard to understand code flow"

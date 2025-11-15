@@ -11,28 +11,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 GITHUB_REPO="arpitnath/super-claude-kit"
-
-# Auto-detect latest stable version if not specified
-if [ -z "${VERSION:-}" ]; then
-  echo "🔍 Detecting latest stable version..."
-  VERSION=$(curl -fsSL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || echo "")
-
-  if [ -z "$VERSION" ]; then
-    # Fallback: Try getting tags if releases API fails
-    VERSION=$(curl -fsSL "https://api.github.com/repos/$GITHUB_REPO/tags" 2>/dev/null | python3 -c "import sys, json; tags = json.load(sys.stdin); print(tags[0]['name'] if tags else '')" 2>/dev/null || echo "")
-  fi
-
-  if [ -z "$VERSION" ]; then
-    # Final fallback: Use known stable version
-    VERSION="v2.0.1"
-    echo "⚠️  Could not auto-detect version, using fallback: $VERSION"
-  else
-    echo "✓ Detected latest version: $VERSION"
-  fi
-else
-  echo "📌 Using specified version: $VERSION"
-fi
-
+VERSION="${VERSION:-v2.0.1}"
 GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/$VERSION"
 
 INSTALL_DIR="$(pwd)"
@@ -52,6 +31,7 @@ if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/manifest.json" ] && [ -d "$SCRIPT_D
   echo ""
 else
   echo "🌐 Remote installation mode (downloading from GitHub)"
+  echo "📌 Installing version: $VERSION"
   echo ""
 fi
 

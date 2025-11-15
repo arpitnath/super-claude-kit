@@ -426,7 +426,7 @@ echo "   • Usage guide: .claude/docs/CAPSULE_USAGE_GUIDE.md"
 echo "   • Project instructions: CLAUDE.md"
 echo "   • View stats: bash .claude/scripts/show-stats.sh"
 if [ -f "$HOME/.claude/bin/dependency-scanner" ]; then
-  echo "   • Dependency tools: .claude/tools/ (NEW in v2.0)"
+  echo "   • Dependency tools: .claude/tools/"
 fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -86,12 +86,6 @@ bash .claude/scripts/test-super-claude.sh
 bash .claude/scripts/show-stats.sh
 ```
 
-### Version-Specific Install
-
-```bash
-VERSION=v2.0.0 curl -fsSL https://raw.githubusercontent.com/arpitnath/super-claude-kit/master/install | bash
-```
-
 ---
 
 ## Usage
@@ -188,12 +182,6 @@ progressive-reader --list
 
 ```bash
 bash .claude/scripts/update-super-claude.sh
-```
-
-### Install Specific Version
-
-```bash
-bash .claude/scripts/update-super-claude.sh --version v2.0.0
 ```
 
 ### Development Mode

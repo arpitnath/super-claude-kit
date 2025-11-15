@@ -194,14 +194,15 @@ if [ "$INSTALL_MODE" = "local" ] && [ -f "$SCRIPT_DIR/tools/dependency-scanner/b
   chmod +x "$HOME/.claude/bin/dependency-scanner"
   echo "✓ Dependency scanner installed (local)"
 elif [ "$OS" != "unknown" ]; then
-  BINARY_URL="https://github.com/arpitnath/super-claude-kit/releases/download/v2.0.0/${BINARY_NAME}"
+  BINARY_URL="https://raw.githubusercontent.com/arpitnath/super-claude-kit/$VERSION/tools/dependency-scanner/bin/${BINARY_NAME}"
 
   if curl -fsSL "$BINARY_URL" -o "$HOME/.claude/bin/dependency-scanner" 2>/dev/null; then
     chmod +x "$HOME/.claude/bin/dependency-scanner"
-    echo "✓ Dependency scanner installed"
+    echo "✓ Dependency scanner installed (remote)"
   else
-    echo "⚠️  Could not download dependency scanner (will be available in v2.0 release)"
-    echo "   Scanner functionality will be skipped until available"
+    echo "⚠️  Could not download dependency scanner from GitHub"
+    echo "   URL attempted: $BINARY_URL"
+    echo "   Scanner functionality will be skipped"
   fi
 else
   echo "⚠️  Unsupported platform: $OS-$ARCH"

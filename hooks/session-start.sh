@@ -178,6 +178,7 @@ if command -v jq > /dev/null 2>&1; then
     '{
       systemMessage: $msg,
       hookSpecificOutput: {
+        hookEventName: "SessionStart",
         additionalContext: $context
       }
     }'
@@ -187,6 +188,7 @@ else
 {
   "systemMessage": "🚀 Super Claude Kit v2.0 Active - Context Loaded",
   "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
     "additionalContext": "Session initialized with capsule, git state, and tool access"
   }
 }

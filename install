@@ -173,26 +173,54 @@ echo ""
 echo "Building dependency tools locally..."
 mkdir -p "$HOME/.claude/bin"
 
-# Check if Go is installed
+# Check if Go is installed, or install it locally
+GO_CMD="go"
 if ! command -v go &> /dev/null; then
-  echo "⚠️  Go not found - dependency tools will not be available"
-  echo "   Install Go from https://go.dev/dl/ to enable:"
-  echo "   • dependency-scanner (analyze code dependencies)"
-  echo "   • progressive-reader (read large files efficiently)"
-  echo ""
-  echo "   The kit will still work without these tools."
-  echo ""
+  echo "📥 Go not found. Installing Go locally to ~/.claude/go..."
+
+  # Detect platform
+  ARCH=$(uname -m)
+  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+  case "$ARCH" in
+    x86_64) ARCH="amd64" ;;
+    arm64|aarch64) ARCH="arm64" ;;
+  esac
+
+  case "$OS" in
+    darwin) OS="darwin" ;;
+    linux) OS="linux" ;;
+  esac
+
+  GO_VERSION="1.23.4"
+  GO_URL="https://go.dev/dl/go${GO_VERSION}.${OS}-${ARCH}.tar.gz"
+
+  echo "  Downloading Go ${GO_VERSION} for ${OS}-${ARCH}..."
+  if curl -fsSL "$GO_URL" | tar -xz -C "$HOME/.claude/" 2>&1 | grep -v "^x "; then
+    echo "  ✅ Go installed to ~/.claude/go"
+    GO_CMD="$HOME/.claude/go/bin/go"
+    echo ""
+  else
+    echo "  ❌ Failed to download Go"
+    echo "  The kit will still work, but dependency tools will not be available."
+    echo "  You can install Go manually from https://go.dev/dl/"
+    echo ""
+    GO_CMD=""
+  fi
 else
   GO_VERSION=$(go version | awk '{print $3}')
   echo "✓ Found Go: $GO_VERSION"
   echo ""
+fi
+
+if [ -n "$GO_CMD" ]; then
 
   BUILT_TOOLS=0
 
   # Build dependency-scanner
   if [ "$INSTALL_MODE" = "local" ] && [ -d "$SCRIPT_DIR/tools/dependency-scanner" ]; then
     echo "  Building dependency-scanner..."
-    if (cd "$SCRIPT_DIR/tools/dependency-scanner" && go build -o "$HOME/.claude/bin/dependency-scanner" . >/dev/null 2>&1); then
+    if (cd "$SCRIPT_DIR/tools/dependency-scanner" && "$GO_CMD" build -o "$HOME/.claude/bin/dependency-scanner" . >/dev/null 2>&1); then
       chmod +x "$HOME/.claude/bin/dependency-scanner"
       SCANNER_VERSION=$("$HOME/.claude/bin/dependency-scanner" --version 2>&1 | head -1 || echo "unknown")
       echo "  ✅ dependency-scanner built: $SCANNER_VERSION"
@@ -207,7 +235,7 @@ else
   # Build progressive-reader
   if [ "$INSTALL_MODE" = "local" ] && [ -d "$SCRIPT_DIR/tools/progressive-reader" ]; then
     echo "  Building progressive-reader..."
-    if (cd "$SCRIPT_DIR/tools/progressive-reader" && go build -o "$HOME/.claude/bin/progressive-reader" cmd/main.go >/dev/null 2>&1); then
+    if (cd "$SCRIPT_DIR/tools/progressive-reader" && "$GO_CMD" build -o "$HOME/.claude/bin/progressive-reader" cmd/main.go >/dev/null 2>&1); then
       chmod +x "$HOME/.claude/bin/progressive-reader"
       READER_VERSION=$("$HOME/.claude/bin/progressive-reader" --version 2>&1 | head -1 || echo "unknown")
       echo "  ✅ progressive-reader built: $READER_VERSION"

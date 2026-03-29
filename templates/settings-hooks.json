@@ -26,10 +26,22 @@
   "PreToolUse": [
     {
       "matcher": "*",
+      "if": "Read(*)",
       "hooks": [
         {
           "type": "command",
-          "command": "bash $HOME/.claude/cck/hooks/pre-tool-use.sh",
+          "command": "bash $HOME/.claude/cck/hooks/pre-tool-use-read.sh",
+          "timeout": 10
+        }
+      ]
+    },
+    {
+      "matcher": "*",
+      "if": "Task(*)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash $HOME/.claude/cck/hooks/pre-tool-use-task.sh",
           "timeout": 10
         }
       ]
@@ -59,6 +71,18 @@
       ]
     }
   ],
+  "PostCompact": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/post-compact.js",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
   "SessionEnd": [
     {
       "matcher": "*",
@@ -67,6 +91,66 @@
           "type": "command",
           "command": "node $HOME/.claude/cck/hooks/session-end.js",
           "timeout": 15
+        }
+      ]
+    }
+  ],
+  "SubagentStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/subagent-start.js",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "TeammateIdle": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/teammate-idle.js",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "WorktreeCreate": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/worktree-lifecycle.js",
+          "timeout": 15
+        }
+      ]
+    }
+  ],
+  "WorktreeRemove": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/worktree-lifecycle.js",
+          "timeout": 15
+        }
+      ]
+    }
+  ],
+  "StopFailure": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/cck/hooks/stop-failure.js",
+          "timeout": 10
         }
       ]
     }

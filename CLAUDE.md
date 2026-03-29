@@ -30,7 +30,14 @@ Context is handled automatically. Hooks capture everything:
 - **session-start.js**: Injects last session summary, top discoveries, recent files, team activity (crew mode)
 - **post-tool-use.js**: Captures Read/Write/Edit operations and Task (sub-agent) invocations
 - **session-end.js**: Saves session summary with file/agent counts
-- **pre-tool-use.sh**: Tool enforcement warnings, large file blocking
+- **pre-compact.js**: Saves session continuity document before auto-compact
+- **post-compact.js**: Restores session continuity after auto-compact
+- **pre-tool-use-read.sh**: Large file blocking (>50KB), recent-read warnings, capsule context suggestions
+- **pre-tool-use-task.sh**: Dependency enforcement, file search suggestions, context-librarian suggestions
+- **subagent-start.js**: Injects crew context and relevant discoveries into subagent sessions
+- **teammate-idle.js**: Saves teammate state and triggers handoff context capture
+- **worktree-lifecycle.js**: Registers/deregisters worktrees, updates crew state (WorktreeCreate + WorktreeRemove)
+- **stop-failure.js**: Captures failure context and saves diagnostics for next session
 - **stop.sh**: Quality check after responses
 
 Crew mode: Capsule is crew-aware. Shared `capsule.db` with teammate-scoped namespaces. See `docs/AGENT_TEAMS_WORKTREE_MODE.md`.

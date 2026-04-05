@@ -130,8 +130,8 @@ function detectTechStack(projectRoot, files) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-async function main() {
-  const projectRoot = resolve(process.argv[2] || process.cwd());
+export async function scanCodebase(projectRootArg) {
+  const projectRoot = resolve(projectRootArg || process.argv[2] || process.cwd());
 
   console.log(`Map Scanner: scanning ${projectRoot}`);
 
@@ -306,7 +306,11 @@ async function main() {
   console.log(`  Namespace:       map/${projectHash}/`);
 }
 
-main().catch(err => {
-  console.error('map-scanner failed:', err);
-  process.exit(1);
-});
+// CLI entry point
+const isDirectRun = process.argv[1]?.includes('map-scanner');
+if (isDirectRun) {
+  scanCodebase().catch(err => {
+    console.error('map-scanner failed:', err);
+    process.exit(1);
+  });
+}

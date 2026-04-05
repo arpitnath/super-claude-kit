@@ -1734,17 +1734,17 @@ async function mapInit() {
 
   console.log('Scanning codebase...');
   const { scanCodebase } = await import(scannerPath);
-  await scanCodebase();
+  await scanCodebase(process.cwd());
 
   console.log('Linking dependencies...');
-  const { linkDependencies } = await import(linkerPath);
-  await linkDependencies();
+  const { linkDependencies, computeProjectHash } = await import(linkerPath);
+  await linkDependencies(process.cwd(), computeProjectHash(process.cwd()));
 
   console.log('Map built successfully. Run "cck map status" to see coverage.');
 }
 
 async function mapStatus() {
-  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'index.js'));
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
   const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
 
   const dbPath = getCapsuleDbPath();
@@ -1757,7 +1757,8 @@ async function mapStatus() {
   const hash = getProjectHash();
   const ns = `map/${hash}/meta`;
 
-  const meta = blink.get(ns);
+  const metaRecords = blink.list(ns);
+  const meta = metaRecords[0];
   if (!meta) {
     console.log('No map found. Run "cck map init" first.');
     blink.close();
@@ -1789,7 +1790,7 @@ async function mapShow() {
     process.exit(1);
   }
 
-  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'index.js'));
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
   const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
 
   const dbPath = getCapsuleDbPath();
@@ -1802,7 +1803,8 @@ async function mapShow() {
   const hash = getProjectHash();
   const ns = `map/${hash}/ast/${targetPath}`;
 
-  const record = blink.get(ns);
+  const records = blink.list(ns);
+  const record = records[0];
   if (!record) {
     console.log(`No map record found for: ${targetPath}`);
     console.log('Run "cck map init" to build the map.');
@@ -1836,7 +1838,7 @@ async function mapShow() {
 }
 
 async function mapUpdate() {
-  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'index.js'));
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
   const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
 
   const dbPath = getCapsuleDbPath();
@@ -1847,8 +1849,8 @@ async function mapUpdate() {
 
   const blink = new Blink({ dbPath });
   const hash = getProjectHash();
-  const meta = blink.get(`map/${hash}/meta`);
-
+  const metaRecords2 = blink.list(`map/${hash}/meta`);
+  const meta2 = metaRecords2[0];
   if (!meta) {
     console.log('No map found. Run "cck map init" first.');
     blink.close();
@@ -1901,7 +1903,7 @@ async function mapUpdate() {
 }
 
 async function mapHot() {
-  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'index.js'));
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
   const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
 
   const dbPath = getCapsuleDbPath();
@@ -1948,7 +1950,7 @@ async function mapHot() {
 }
 
 async function mapStubs() {
-  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'index.js'));
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
   const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
 
   const dbPath = getCapsuleDbPath();

@@ -84,6 +84,14 @@ async function main() {
           },
           tags: ['file', action, sessionId, ...(crewId ? [crewId.teammate_name] : [])]
         });
+
+        // Extract file knowledge on Write/Edit (not Read — too noisy)
+        if (action === 'write' || action === 'edit') {
+          try {
+            const { extractFileKnowledge } = await import('./lib/knowledge-extractor.js');
+            extractFileKnowledge(blink, filePath, action, projectHash, crewId, sessionId);
+          } catch { /* knowledge extraction is non-critical */ }
+        }
       }
     }
 

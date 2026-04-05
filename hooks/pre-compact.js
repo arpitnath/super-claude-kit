@@ -65,6 +65,12 @@ async function main() {
       tags: ['handoff', 'pre-compact', sessionId, ...(crewId ? [crewId.teammate_name] : [])]
     });
 
+    // Extract session knowledge (modules, bugs, decisions) before context is lost
+    try {
+      const { extractSessionKnowledge } = await import('./lib/knowledge-extractor.js');
+      extractSessionKnowledge(blink, sessionId, projectHash, crewId);
+    } catch { /* knowledge extraction is non-critical */ }
+
     blink.close();
     process.exit(0);
 

@@ -184,9 +184,10 @@ async function main() {
         // Filter discoveries that mention this file (path or basename)
         const relatedDiscoveries = allDiscoveries.filter(record => {
           const summaryMatches = record.summary?.includes(filePath) || record.summary?.includes(fileName);
-          const contentMatches = typeof record.content === 'string'
-            ? (record.content.includes(filePath) || record.content.includes(fileName))
-            : false;
+          const contentStr = typeof record.content === 'string'
+            ? record.content
+            : record.content ? JSON.stringify(record.content) : '';
+          const contentMatches = contentStr.includes(filePath) || contentStr.includes(fileName);
           return summaryMatches || contentMatches;
         });
 

@@ -15,6 +15,7 @@ import { Blink } from 'blink-query';
 import { createInterface } from 'readline';
 import { basename } from 'path';
 import { getCapsuleDbPath, getCrewIdentity, crewNamespace, getProjectHash, isDisabled } from './lib/crew-detect.js';
+import { saveWithWikilinks } from './lib/wikilink-save.js';
 
 /**
  * Safely resolve a namespace, returning empty array if not found
@@ -102,7 +103,7 @@ async function main() {
 
       if (agentType && prompt) {
         // Save sub-agent invocation (SUMMARY = read directly, no fetching needed)
-        blink.save({
+        saveWithWikilinks(blink, {
           namespace: crewNamespace(`session/${sessionId}/subagents`, crewId, projectHash),
           title: `${agentType} - ${new Date().toISOString()}`,
           summary: prompt.slice(0, 200),
@@ -113,7 +114,7 @@ async function main() {
             timestamp: Date.now()
           },
           tags: ['subagent', agentType, sessionId, ...(crewId ? [crewId.teammate_name] : [])]
-        });
+        }, projectHash);
       }
 
       // Auto-save discoveries in crew mode when specialist agents find significant insights

@@ -12,6 +12,7 @@
  */
 
 import { crewNamespace } from './crew-detect.js';
+import { saveWithWikilinks } from './wikilink-save.js';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { basename, dirname, relative, resolve } from 'path';
 import { homedir } from 'os';
@@ -272,7 +273,7 @@ function extractBugKnowledge(blink, sessionId, projectHash, crewId) {
         const title = prompt.slice(0, 60).replace(/\n/g, ' ').trim();
         if (!title) continue;
 
-        blink.save({
+        saveWithWikilinks(blink, {
           namespace: crewNamespace('knowledge/bugs', crewId, projectHash),
           title,
           summary: `${agentType} investigation: ${prompt.slice(0, 200)}`,
@@ -284,7 +285,7 @@ function extractBugKnowledge(blink, sessionId, projectHash, crewId) {
             timestamp: Date.now()
           },
           tags: ['knowledge', 'bug', agentType, sessionId]
-        });
+        }, projectHash);
       } catch { /* skip malformed records */ }
     }
   } catch { /* non-critical */ }
@@ -343,7 +344,7 @@ function extractDecisionKnowledge(blink, sessionId, projectHash, crewId) {
             const title = decisionText.slice(0, 60).replace(/\n/g, ' ').trim();
             if (!title || title.length < 10) continue;
 
-            blink.save({
+            saveWithWikilinks(blink, {
               namespace: crewNamespace('knowledge/decisions', crewId, projectHash),
               title,
               summary: decisionText,
@@ -355,7 +356,7 @@ function extractDecisionKnowledge(blink, sessionId, projectHash, crewId) {
                 source: 'transcript'
               },
               tags: ['knowledge', 'decision', sessionId]
-            });
+            }, projectHash);
 
             decisionsFound++;
             break; // One decision per text block max

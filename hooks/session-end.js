@@ -14,6 +14,7 @@ import { resolve } from 'path';
 import { execSync } from 'child_process';
 import { getCapsuleDbPath, getCrewIdentity, crewNamespace, getProjectHash, isDisabled } from './lib/crew-detect.js';
 import { generateHandoff } from './lib/handoff-generator.js';
+import { saveWithWikilinks } from './lib/wikilink-save.js';
 
 function getCurrentBranch() {
   try {
@@ -80,7 +81,7 @@ async function main() {
 
     // Generate and save handoff document (SUMMARY type for direct consumption)
     const handoff = generateHandoff(getCapsuleDbPath(), sessionId, crewId, projectHash);
-    blink.save({
+    saveWithWikilinks(blink, {
       namespace: crewNamespace(`session/${sessionId}/handoff`, crewId, projectHash),
       title: `Session ${sessionId} Handoff`,
       summary: handoff,
@@ -92,7 +93,7 @@ async function main() {
         generatedAt: Date.now()
       },
       tags: ['handoff', sessionId, ...(crewId ? [crewId.teammate_name] : [])]
-    });
+    }, projectHash);
 
     // Extract session knowledge (modules, bugs, decisions)
     try {

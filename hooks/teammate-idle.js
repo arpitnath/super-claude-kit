@@ -13,6 +13,7 @@ import { Blink } from 'blink-query';
 import { createInterface } from 'readline';
 import { getCapsuleDbPath, getCrewIdentity, crewNamespace, getProjectHash, isDisabled } from './lib/crew-detect.js';
 import { generateHandoff } from './lib/handoff-generator.js';
+import { saveWithWikilinks } from './lib/wikilink-save.js';
 import { updateTeammateState } from '../crew/lib/team-state-manager.js';
 
 async function main() {
@@ -41,7 +42,7 @@ async function main() {
     const handoff = generateHandoff(dbPath, sessionId, crewId, projectHash);
 
     // Save handoff to Capsule with 'teammate-idle' tag
-    blink.save({
+    saveWithWikilinks(blink, {
       namespace: crewNamespace(`session/${sessionId}/handoff`, crewId, projectHash),
       title: `Teammate Idle — Session ${sessionId}`,
       summary: handoff,
@@ -53,7 +54,7 @@ async function main() {
         idleAt: Date.now()
       },
       tags: ['handoff', 'teammate-idle', sessionId, ...(crewId ? [crewId.teammate_name] : [])]
-    });
+    }, projectHash);
 
     blink.close();
 

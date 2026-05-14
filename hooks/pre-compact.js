@@ -15,6 +15,7 @@ import { createInterface } from 'readline';
 import { execSync } from 'child_process';
 import { getCapsuleDbPath, getCrewIdentity, crewNamespace, getProjectHash, isDisabled } from './lib/crew-detect.js';
 import { generateHandoff } from './lib/handoff-generator.js';
+import { saveWithWikilinks } from './lib/wikilink-save.js';
 
 function getCurrentBranch() {
   try {
@@ -50,7 +51,7 @@ async function main() {
     const blink = new Blink({ dbPath });
 
     // Save pre-compaction handoff (tagged distinctly so session-start can find the latest)
-    blink.save({
+    saveWithWikilinks(blink, {
       namespace: crewNamespace(`session/${sessionId}/handoff`, crewId, projectHash),
       title: `Pre-compact handoff ${sessionId}`,
       summary: handoff,
@@ -63,7 +64,7 @@ async function main() {
         generatedAt: Date.now()
       },
       tags: ['handoff', 'pre-compact', sessionId, ...(crewId ? [crewId.teammate_name] : [])]
-    });
+    }, projectHash);
 
     // Extract session knowledge (modules, bugs, decisions) before context is lost
     try {

@@ -1765,8 +1765,7 @@ async function mapStatus() {
     return;
   }
 
-  let data = {};
-  try { data = JSON.parse(meta.content || '{}'); } catch {}
+  const data = meta.content ?? {};
 
   console.log('Codebase Map Status');
   console.log('─'.repeat(40));
@@ -1812,8 +1811,7 @@ async function mapShow() {
     return;
   }
 
-  let data = {};
-  try { data = JSON.parse(record.content || '{}'); } catch {}
+  const data = record.content ?? {};
 
   if (record.type === 'COLLECTION') {
     console.log(`Directory: ${targetPath}`);
@@ -1857,8 +1855,7 @@ async function mapUpdate() {
     return;
   }
 
-  let data = {};
-  try { data = JSON.parse(meta.content || '{}'); } catch {}
+  const data = meta.content ?? {};
   const storedSha = data.last_scan_sha;
   blink.close();
 
@@ -1925,8 +1922,7 @@ async function mapHot() {
 
   const fileScores = [];
   for (const record of records) {
-    let data = {};
-    try { data = JSON.parse(record.content || '{}'); } catch {}
+    const data = record.content ?? {};
     if (Array.isArray(data.imported_by) && data.imported_by.length > 0) {
       const filePath = record.namespace.replace(`${ns}/`, '');
       fileScores.push({ path: filePath, importedBy: data.imported_by.length });
@@ -1972,8 +1968,7 @@ async function mapStubs() {
 
   const stubs = [];
   for (const record of records) {
-    let data = {};
-    try { data = JSON.parse(record.content || '{}'); } catch {}
+    const data = record.content ?? {};
     if (data.understanding_depth === 'stub') {
       stubs.push(record.namespace.replace(`${ns}/`, ''));
     }

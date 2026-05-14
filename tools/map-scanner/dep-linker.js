@@ -289,11 +289,11 @@ export async function linkDependencies(projectRoot, projectHash) {
         title: dirTitle,
         type: 'COLLECTION',
         summary: `${dirFiles.length} file${dirFiles.length !== 1 ? 's' : ''}, ${totalImporters} total importers`,
-        content: JSON.stringify({
+        content: {
           total_importers: totalImporters,
           key_files: keyFiles,
           file_count: dirFiles.length,
-        }),
+        },
       })
     );
   }

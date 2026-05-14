@@ -231,7 +231,7 @@ export async function linkDependencies(projectRoot, projectHash) {
         type: 'META',
         summary: record.summary || relPath,
         tags: record.tags || [],
-        content: JSON.stringify(updatedContent),
+        content: updatedContent,
       })
     );
   }
@@ -313,13 +313,13 @@ export async function linkDependencies(projectRoot, projectHash) {
     title: 'overview',
     type: 'META',
     summary: `${files.size} files linked. Hubs: ${hubFiles.slice(0, 3).map(h => basename(h.path)).join(', ') || 'none'}`,
-    content: JSON.stringify({
+    content: {
       ...existingOverview,
       hub_files: hubFiles,
       entry_points: entryPoints,
       total_files: files.size,
       dep_linked_at: new Date().toISOString(),
-    }),
+    },
   });
 
   blink.close();

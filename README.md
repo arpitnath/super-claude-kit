@@ -200,18 +200,25 @@ Use `--crew <name>` to scope commands to a crew group (e.g. `cck crew merge --cr
 
 ## How it works
 
-CCK extends Claude Code through its official hook system. Six hooks run at key moments:
+CCK extends Claude Code through its official hook system. Twelve hooks run at key moments:
 
 ```
-SessionStart  → Restore previous context, inject discoveries, detect crew membership
-PostToolUse   → Capture file ops and agent results to capsule.db
-PreToolUse    → Enforce dependency tools, block large file reads, suggest right tool
-PreCompact    → Save session continuity doc before context window compacts
-SessionEnd    → Save session summary with branch, file count, agent count
-Stop          → Quality check after responses
+SessionStart   → Restore previous context, inject discoveries, detect crew membership
+PostToolUse    → Capture file ops and agent results to capsule.db
+PreToolUse     → Enforce dependency tools, block large file reads, suggest right tool
+PreCompact     → Save session continuity doc before context window compacts
+PostCompact    → Re-inject saved context after compaction
+SessionEnd     → Save session summary with branch, file count, agent count
+SubagentStart  → Inject crew context and discoveries into subagent sessions
+TeammateIdle   → Save teammate state and capture handoff on idle
+WorktreeLifecycle → Register/deregister worktrees, update crew state
+StopFailure    → Capture failure context and diagnostics for next session
+Stop           → Quality check after responses
 ```
 
 All data lives in `~/.claude/capsule.db` — a SQLite database managed by [**blink-query**](https://github.com/arpitnath/blink-query), a resolution engine that organizes knowledge into namespaces with types, tags, and relationships. One global install, automatic project scoping.
+
+**Wikilink graph**: prose summaries (handoffs, decisions, agent findings) are scanned for `[[refs]]` on save. Resolved references auto-create project-scoped ALIAS records, traversable via `context-query backlinks <title-or-path>` — returning hard links and FTS soft mentions. Resolution is eager-only.
 
 ---
 

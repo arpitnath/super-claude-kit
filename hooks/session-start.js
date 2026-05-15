@@ -159,6 +159,18 @@ async function main() {
       );
     }
 
+    // Surface file knowledge from previous sessions
+    try {
+      const knowledgeNs = crewNamespace('knowledge/files', crewId, projectHash);
+      const recentKnowledge = blink.query(`${knowledgeNs} order by updated_at desc limit 5`);
+      if (recentKnowledge.length > 0) {
+        contextParts.push(
+          `## File Knowledge\n` +
+          recentKnowledge.map(k => `- ${k.title}: ${k.summary?.slice(0, 100) || ''}`).join('\n')
+        );
+      }
+    } catch { /* graceful degradation */ }
+
     const recentFiles = blink.search('file', undefined, 3);
 
     if (recentFiles.length > 0) {

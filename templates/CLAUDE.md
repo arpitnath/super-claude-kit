@@ -59,7 +59,13 @@ Context is handled **fully automatically**. The JS hooks capture everything:
 | `post-tool-use.js` | After Read/Write/Edit/Task | File operations (META), sub-agent invocations (SUMMARY) |
 | `session-end.js` | Session ends | Session summary with file count, agent count |
 | `pre-compact.js` | Before auto-compact | Saves session continuity document while full context is still available |
-| `pre-tool-use.sh` | Before tool calls | Tool enforcement warnings, large file blocking |
+| `post-compact.js` | After auto-compact | Restores session continuity and injects saved context |
+| `pre-tool-use-read.sh` | Before Read tool calls | Large file blocking (>50KB), recent-read warnings, capsule context suggestions |
+| `pre-tool-use-task.sh` | Before Task tool calls | Dependency enforcement, file search suggestions, context-librarian suggestions |
+| `subagent-start.js` | Subagent spawned | Injects crew context and relevant discoveries into subagent session |
+| `teammate-idle.js` | Teammate goes idle | Saves teammate state, triggers handoff context capture |
+| `worktree-lifecycle.js` | Worktree created/removed | Registers/deregisters worktree in global registry, updates crew state |
+| `stop-failure.js` | Response stops with failure | Captures failure context, saves diagnostic info for next session |
 | `stop.sh` | After responses | Quality check |
 
 ### Capsule Record Types

@@ -15,6 +15,7 @@ import { Blink } from 'blink-query';
 import { createInterface } from 'readline';
 import { basename } from 'path';
 import { getCapsuleDbPath, getCrewIdentity, crewNamespace, getProjectHash, isDisabled } from './lib/crew-detect.js';
+import { saveWithWikilinks } from './lib/wikilink-save.js';
 
 /**
  * Safely resolve a namespace, returning empty array if not found
@@ -84,6 +85,14 @@ async function main() {
           },
           tags: ['file', action, sessionId, ...(crewId ? [crewId.teammate_name] : [])]
         });
+
+        // Extract file knowledge on Write/Edit (not Read — too noisy)
+        if (action === 'write' || action === 'edit') {
+          try {
+            const { extractFileKnowledge } = await import('./lib/knowledge-extractor.js');
+            extractFileKnowledge(blink, filePath, action, projectHash, crewId, sessionId);
+          } catch { /* knowledge extraction is non-critical */ }
+        }
       }
     }
 
@@ -94,7 +103,7 @@ async function main() {
 
       if (agentType && prompt) {
         // Save sub-agent invocation (SUMMARY = read directly, no fetching needed)
-        blink.save({
+        saveWithWikilinks(blink, {
           namespace: crewNamespace(`session/${sessionId}/subagents`, crewId, projectHash),
           title: `${agentType} - ${new Date().toISOString()}`,
           summary: prompt.slice(0, 200),
@@ -105,7 +114,7 @@ async function main() {
             timestamp: Date.now()
           },
           tags: ['subagent', agentType, sessionId, ...(crewId ? [crewId.teammate_name] : [])]
-        });
+        }, projectHash);
       }
 
       // Auto-save discoveries in crew mode when specialist agents find significant insights
@@ -176,9 +185,8 @@ async function main() {
         // Filter discoveries that mention this file (path or basename)
         const relatedDiscoveries = allDiscoveries.filter(record => {
           const summaryMatches = record.summary?.includes(filePath) || record.summary?.includes(fileName);
-          const contentMatches = typeof record.content === 'string'
-            ? (record.content.includes(filePath) || record.content.includes(fileName))
-            : false;
+          const contentStr = typeof record.content === 'string' ? record.content : JSON.stringify(record.content ?? {});
+          const contentMatches = contentStr.includes(filePath) || contentStr.includes(fileName);
           return summaryMatches || contentMatches;
         });
 

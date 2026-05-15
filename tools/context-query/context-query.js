@@ -5,6 +5,7 @@
  */
 
 import { Blink } from 'blink-query';
+import { saveWithWikilinks } from '../../hooks/lib/wikilink-save.js';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
@@ -62,7 +63,7 @@ try {
         console.log('Usage: context-query search <term>');
         process.exit(1);
       }
-      const results = blink.search(arg, undefined, parseInt(limitArg) || 10);
+      const results = blink.search(arg, { limit: parseInt(limitArg) || 10 });
       console.log(`## Capsule Search: ${arg}\n`);
       if (results.length === 0) {
         console.log(`No results found for '${arg}'`);
@@ -174,7 +175,7 @@ try {
         console.log('Usage: context-query save <namespace> <title> <summary> [type]');
         process.exit(1);
       }
-      blink.save({ namespace, title, summary, type, tags: [] });
+      saveWithWikilinks(blink, { namespace, title, summary, type, tags: [] }, getProjectHash());
       console.log(`Saved to ${namespace}: "${title}" [${type}]`);
       break;
     }
@@ -290,18 +291,69 @@ try {
       break;
     }
 
+    case 'backlinks': {
+      if (!arg) {
+        console.log('Usage: context-query backlinks <title-or-path>');
+        process.exit(1);
+      }
+
+      // Auto-detect: contains slash → path; else title (resolved via search)
+      let targetPath, targetTitle;
+      if (arg.includes('/')) {
+        targetPath = arg;
+        targetTitle = arg;
+      } else {
+        const candidates = blink.search(arg, { limit: 1 });
+        if (candidates.length === 0) {
+          console.log(`No record found matching title: ${arg}`);
+          break;
+        }
+        targetPath = candidates[0].path;
+        targetTitle = candidates[0].title;
+      }
+
+      const { linked, mentioned } = blink.backlinks(targetPath);
+
+      console.log(`## Backlinks for: ${targetTitle}\n`);
+      console.log(`  Path: ${targetPath}\n`);
+
+      console.log(`### LINKED — ${linked.length} ALIAS record${linked.length !== 1 ? 's' : ''}\n`);
+      if (linked.length === 0) {
+        console.log('  (none)');
+      } else {
+        linked.forEach(r => {
+          console.log(`- **[${r.type}]** ${r.title}`);
+          console.log(`  ns: ${r.namespace}`);
+          if (r.summary) console.log(`  ${r.summary.replace(/\n/g, ' ').slice(0, 120)}`);
+        });
+      }
+
+      console.log(`\n### MENTIONED — ${mentioned.length} FTS soft link${mentioned.length !== 1 ? 's' : ''}\n`);
+      if (mentioned.length === 0) {
+        console.log('  (none)');
+      } else {
+        mentioned.forEach(r => {
+          console.log(`- **[${r.type}]** ${r.title}`);
+          console.log(`  ns: ${r.namespace}`);
+          if (r.summary) console.log(`  ${r.summary.replace(/\n/g, ' ').slice(0, 120)}`);
+        });
+      }
+      break;
+    }
+
     default:
       console.log(`## Capsule Context Query\n`);
       console.log(`Usage: bash $HOME/.claude/cck/tools/context-query/context-query.sh <command> [args]\n`);
       console.log(`Read:`);
-      console.log(`  search <term>      Search records by keyword`);
-      console.log(`  files [limit]      Recent file operations (default: 20)`);
-      console.log(`  agents [limit]     Sub-agent invocation history (default: 10)`);
-      console.log(`  sessions [limit]   Session summaries (default: 5)`);
-      console.log(`  recent [limit]     All recent activity (default: 15)`);
-      console.log(`  discoveries [limit] All saved discoveries (default: 50)`);
-      console.log(`  ns <namespace>     Query specific Capsule namespace`);
-      console.log(`  stats              Database statistics`);
+      console.log(`  search <term>             Search records by keyword`);
+      console.log(`  files [limit]             Recent file operations (default: 20)`);
+      console.log(`  agents [limit]            Sub-agent invocation history (default: 10)`);
+      console.log(`  sessions [limit]          Session summaries (default: 5)`);
+      console.log(`  recent [limit]            All recent activity (default: 15)`);
+      console.log(`  discoveries [limit]       All saved discoveries (default: 50)`);
+      console.log(`  ns <namespace>            Query specific Capsule namespace`);
+      console.log(`  backlinks <title-or-path> Find records linking to a target (slash=path, else title)`);
+      console.log(`  stats                     Database statistics`);
       console.log(``);
       console.log(`Write:`);
       console.log(`  save <ns> <title> <summary> [type]   Save a record`);

@@ -21,7 +21,7 @@ const VERSION = pkg.version;
 
 const command = process.argv[2];
 
-const commands = { setup, teardown, status, version, update, prune, crew, stats, build };
+const commands = { setup, teardown, status, version, update, prune, crew, stats, build, map };
 
 if (!command || !commands[command]) {
   console.log(`cck v${VERSION} - Claude Capsule Kit`);
@@ -40,6 +40,7 @@ if (!command || !commands[command]) {
   console.log('  cck stats <cmd>        Usage analytics (overview|files|agents|sessions|branch)');
   console.log('  cck prune [days]       Remove old records (default: 30 days)');
   console.log('  cck crew <cmd>         Crew teams (init|start|stop|status|doctor|merge|gc|...)');
+  console.log('  cck map <cmd>          Codebase map (init|status|show|update|hot|stubs)');
   console.log('');
   console.log('https://github.com/arpitnath/claude-capsule-kit');
   process.exit(command ? 1 : 0);
@@ -1697,4 +1698,291 @@ async function stats() {
   } catch (err) {
     process.exit(err.status || 1);
   }
+}
+
+async function map() {
+  const sub = process.argv[3];
+  const subs = { init: mapInit, status: mapStatus, show: mapShow, update: mapUpdate, hot: mapHot, stubs: mapStubs };
+
+  if (!sub || !subs[sub]) {
+    console.log('Usage: cck map <command>');
+    console.log('');
+    console.log('Commands:');
+    console.log('  cck map init              Scan codebase and build map');
+    console.log('  cck map status            Show map status and coverage');
+    console.log('  cck map show <path>       Show file or directory details');
+    console.log('  cck map update            Incremental update (changed files only)');
+    console.log('  cck map hot               Show hub files (most imported)');
+    console.log('  cck map stubs             Show files with no understanding');
+    process.exit(sub ? 1 : 0);
+  }
+  await subs[sub]();
+}
+
+async function mapInit() {
+  const scannerPath = join(PKG_ROOT, 'tools', 'map-scanner', 'map-scanner.js');
+  const linkerPath = join(PKG_ROOT, 'tools', 'map-scanner', 'dep-linker.js');
+
+  if (!existsSync(scannerPath)) {
+    console.error('Map scanner not found. Run "cck setup" to install or check tools/map-scanner/map-scanner.js');
+    process.exit(1);
+  }
+  if (!existsSync(linkerPath)) {
+    console.error('Dep linker not found. Run "cck setup" to install or check tools/map-scanner/dep-linker.js');
+    process.exit(1);
+  }
+
+  console.log('Scanning codebase...');
+  const { scanCodebase } = await import(scannerPath);
+  await scanCodebase(process.cwd());
+
+  console.log('Linking dependencies...');
+  const { linkDependencies, computeProjectHash } = await import(linkerPath);
+  await linkDependencies(process.cwd(), computeProjectHash(process.cwd()));
+
+  console.log('Map built successfully. Run "cck map status" to see coverage.');
+}
+
+async function mapStatus() {
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
+  const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
+
+  const dbPath = getCapsuleDbPath();
+  if (!existsSync(dbPath)) {
+    console.log('No map found. Run "cck map init" first.');
+    return;
+  }
+
+  const blink = new Blink({ dbPath });
+  const hash = getProjectHash();
+  const ns = `map/${hash}/meta`;
+
+  const metaRecords = blink.list(ns);
+  const meta = metaRecords[0];
+  if (!meta) {
+    console.log('No map found. Run "cck map init" first.');
+    blink.close();
+    return;
+  }
+
+  const data = meta.content ?? {};
+
+  console.log('Codebase Map Status');
+  console.log('─'.repeat(40));
+  console.log(`  Files scanned:  ${data.file_count ?? 'unknown'}`);
+  console.log(`  Languages:      ${Array.isArray(data.languages) ? data.languages.join(', ') : (data.languages ?? 'unknown')}`);
+  console.log(`  Last scan SHA:  ${data.last_scan_sha ?? 'unknown'}`);
+
+  try {
+    const headSha = execSync('git rev-parse --short HEAD', { stdio: 'pipe' }).toString().trim();
+    const stale = data.last_scan_sha && data.last_scan_sha !== headSha;
+    console.log(`  Current HEAD:   ${headSha}${stale ? ' (map is stale — run "cck map update")' : ' (up to date)'}`);
+  } catch {}
+
+  blink.close();
+}
+
+async function mapShow() {
+  const targetPath = process.argv[4];
+  if (!targetPath) {
+    console.error('Usage: cck map show <path>');
+    process.exit(1);
+  }
+
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
+  const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
+
+  const dbPath = getCapsuleDbPath();
+  if (!existsSync(dbPath)) {
+    console.log('No map found. Run "cck map init" first.');
+    return;
+  }
+
+  const blink = new Blink({ dbPath });
+  const hash = getProjectHash();
+  const ns = `map/${hash}/ast/${targetPath}`;
+
+  const records = blink.list(ns);
+  const record = records[0];
+  if (!record) {
+    console.log(`No map record found for: ${targetPath}`);
+    console.log('Run "cck map init" to build the map.');
+    blink.close();
+    return;
+  }
+
+  const data = record.content ?? {};
+
+  if (record.type === 'COLLECTION') {
+    console.log(`Directory: ${targetPath}`);
+    console.log('─'.repeat(40));
+    const children = blink.list(ns);
+    for (const child of children) {
+      console.log(`  ${child.namespace.replace(ns + '/', '')}`);
+    }
+  } else {
+    console.log(`File: ${targetPath}`);
+    console.log('─'.repeat(40));
+    console.log(`  Role:        ${data.role ?? 'unknown'}`);
+    console.log(`  Exports:     ${Array.isArray(data.exports) ? data.exports.join(', ') : 'none'}`);
+    console.log(`  Imports:     ${Array.isArray(data.imports) ? data.imports.join(', ') : 'none'}`);
+    console.log(`  Imported by: ${Array.isArray(data.imported_by) ? data.imported_by.join(', ') : 'none'}`);
+    if (data.understanding_depth) {
+      console.log(`  Understanding: ${data.understanding_depth}`);
+    }
+  }
+
+  blink.close();
+}
+
+async function mapUpdate() {
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
+  const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
+
+  const dbPath = getCapsuleDbPath();
+  if (!existsSync(dbPath)) {
+    console.log('No map found. Run "cck map init" first.');
+    return;
+  }
+
+  const blink = new Blink({ dbPath });
+  const hash = getProjectHash();
+  const metaRecords2 = blink.list(`map/${hash}/meta`);
+  const meta2 = metaRecords2[0];
+  if (!meta) {
+    console.log('No map found. Run "cck map init" first.');
+    blink.close();
+    return;
+  }
+
+  const data = meta.content ?? {};
+  const storedSha = data.last_scan_sha;
+  blink.close();
+
+  if (!storedSha) {
+    console.log('No stored SHA found. Running full scan...');
+    await mapInit();
+    return;
+  }
+
+  let changedFiles = [];
+  try {
+    const diff = execSync(`git diff ${storedSha}..HEAD --name-only`, { stdio: 'pipe' }).toString().trim();
+    changedFiles = diff ? diff.split('\n').filter(Boolean) : [];
+  } catch (err) {
+    console.error(`Failed to get git diff: ${err.message}`);
+    process.exit(1);
+  }
+
+  if (changedFiles.length === 0) {
+    console.log('No changed files since last scan. Map is up to date.');
+    return;
+  }
+
+  console.log(`Re-scanning ${changedFiles.length} changed file(s)...`);
+
+  const scannerPath = join(PKG_ROOT, 'tools', 'map-scanner', 'map-scanner.js');
+  if (!existsSync(scannerPath)) {
+    console.error('Map scanner not found. Run "cck setup" first.');
+    process.exit(1);
+  }
+
+  const { scanCodebase } = await import(scannerPath);
+  await scanCodebase({ files: changedFiles });
+
+  const linkerPath = join(PKG_ROOT, 'tools', 'map-scanner', 'dep-linker.js');
+  if (existsSync(linkerPath)) {
+    const { linkDependencies } = await import(linkerPath);
+    await linkDependencies();
+  }
+
+  console.log(`Updated ${changedFiles.length} file(s). Run "cck map status" to confirm.`);
+}
+
+async function mapHot() {
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
+  const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
+
+  const dbPath = getCapsuleDbPath();
+  if (!existsSync(dbPath)) {
+    console.log('No map found. Run "cck map init" first.');
+    return;
+  }
+
+  const blink = new Blink({ dbPath });
+  const hash = getProjectHash();
+  const ns = `map/${hash}/ast`;
+
+  const records = blink.list(ns);
+  if (!records || records.length === 0) {
+    console.log('No map records found. Run "cck map init" first.');
+    blink.close();
+    return;
+  }
+
+  const fileScores = [];
+  for (const record of records) {
+    const data = record.content ?? {};
+    if (Array.isArray(data.imported_by) && data.imported_by.length > 0) {
+      const filePath = record.namespace.replace(`${ns}/`, '');
+      fileScores.push({ path: filePath, importedBy: data.imported_by.length });
+    }
+  }
+
+  fileScores.sort((a, b) => b.importedBy - a.importedBy);
+  const top = fileScores.slice(0, 10);
+
+  if (top.length === 0) {
+    console.log('No hub files found (no files with importers tracked yet).');
+  } else {
+    console.log('Hub Files (most imported):');
+    console.log('─'.repeat(40));
+    for (const { path, importedBy } of top) {
+      console.log(`  ${String(importedBy).padStart(3)} importers  ${path}`);
+    }
+  }
+
+  blink.close();
+}
+
+async function mapStubs() {
+  const { Blink } = await import(join(CCK_DIR, 'node_modules', 'blink-query', 'dist', 'blink.js'));
+  const { getProjectHash, getCapsuleDbPath } = await import(join(CCK_DIR, 'hooks', 'lib', 'crew-detect.js'));
+
+  const dbPath = getCapsuleDbPath();
+  if (!existsSync(dbPath)) {
+    console.log('No map found. Run "cck map init" first.');
+    return;
+  }
+
+  const blink = new Blink({ dbPath });
+  const hash = getProjectHash();
+  const ns = `map/${hash}/ast`;
+
+  const records = blink.list(ns);
+  if (!records || records.length === 0) {
+    console.log('No map records found. Run "cck map init" first.');
+    blink.close();
+    return;
+  }
+
+  const stubs = [];
+  for (const record of records) {
+    const data = record.content ?? {};
+    if (data.understanding_depth === 'stub') {
+      stubs.push(record.namespace.replace(`${ns}/`, ''));
+    }
+  }
+
+  if (stubs.length === 0) {
+    console.log('No stub files found. All files have some understanding depth.');
+  } else {
+    console.log(`Stub Files (${stubs.length} files with no understanding):`);
+    console.log('─'.repeat(40));
+    for (const path of stubs) {
+      console.log(`  ${path}`);
+    }
+  }
+
+  blink.close();
 }

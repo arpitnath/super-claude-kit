@@ -1,4 +1,4 @@
-# Capsule Kit v3.0
+# Capsule Kit v4.0
 
 Context memory for Claude Code. Capsule (SQLite) stores session state automatically via JS hooks. No manual logging needed.
 
@@ -30,10 +30,26 @@ Context is handled automatically. Hooks capture everything:
 - **session-start.js**: Injects last session summary, top discoveries, recent files, team activity (crew mode)
 - **post-tool-use.js**: Captures Read/Write/Edit operations and Task (sub-agent) invocations
 - **session-end.js**: Saves session summary with file/agent counts
-- **pre-tool-use.sh**: Tool enforcement warnings, large file blocking
+- **pre-compact.js**: Saves session continuity document before auto-compact
+- **post-compact.js**: Restores session continuity after auto-compact
+- **pre-tool-use-read.sh**: Large file blocking (>50KB), recent-read warnings, capsule context suggestions
+- **pre-tool-use-task.sh**: Dependency enforcement, file search suggestions, context-librarian suggestions
+- **subagent-start.js**: Injects crew context and relevant discoveries into subagent sessions
+- **teammate-idle.js**: Saves teammate state and triggers handoff context capture
+- **worktree-lifecycle.js**: Registers/deregisters worktrees, updates crew state (WorktreeCreate + WorktreeRemove)
+- **stop-failure.js**: Captures failure context and saves diagnostics for next session
 - **stop.sh**: Quality check after responses
 
 Crew mode: Capsule is crew-aware. Shared `capsule.db` with teammate-scoped namespaces. See `docs/AGENT_TEAMS_WORKTREE_MODE.md`.
+
+### Wikilink Layer
+
+Prose summaries written by hooks (handoffs, decisions, bug findings, agent invocations) are scanned for `[[refs]]` on save. Each resolved reference auto-creates an ALIAS record under `<source>/aliases`, scoped to the current project namespace (no cross-project bleed). Resolution is eager-only: a `[[target]]` whose record does not yet exist is dropped and does not auto-heal when the target appears later.
+
+Query the graph:
+- `bash $HOME/.claude/cck/tools/context-query/context-query.sh backlinks <title-or-path>` — slash arg = path, else title. Returns **LINKED** (hard ALIAS records) + **MENTIONED** (FTS soft references).
+
+Manual `context-query save` also runs wikilink extraction, so `[[refs]]` in saved summaries link the same way hook saves do.
 
 ## Docs
 

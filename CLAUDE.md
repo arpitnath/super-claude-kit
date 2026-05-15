@@ -1,4 +1,4 @@
-# Capsule Kit v3.0
+# Capsule Kit v4.0
 
 Context memory for Claude Code. Capsule (SQLite) stores session state automatically via JS hooks. No manual logging needed.
 
@@ -41,6 +41,15 @@ Context is handled automatically. Hooks capture everything:
 - **stop.sh**: Quality check after responses
 
 Crew mode: Capsule is crew-aware. Shared `capsule.db` with teammate-scoped namespaces. See `docs/AGENT_TEAMS_WORKTREE_MODE.md`.
+
+### Wikilink Layer
+
+Prose summaries written by hooks (handoffs, decisions, bug findings, agent invocations) are scanned for `[[refs]]` on save. Each resolved reference auto-creates an ALIAS record under `<source>/aliases`, scoped to the current project namespace (no cross-project bleed). Resolution is eager-only: a `[[target]]` whose record does not yet exist is dropped and does not auto-heal when the target appears later.
+
+Query the graph:
+- `bash $HOME/.claude/cck/tools/context-query/context-query.sh backlinks <title-or-path>` — slash arg = path, else title. Returns **LINKED** (hard ALIAS records) + **MENTIONED** (FTS soft references).
+
+Manual `context-query save` also runs wikilink extraction, so `[[refs]]` in saved summaries link the same way hook saves do.
 
 ## Docs
 

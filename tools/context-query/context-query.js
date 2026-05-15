@@ -62,7 +62,7 @@ try {
         console.log('Usage: context-query search <term>');
         process.exit(1);
       }
-      const results = blink.search(arg, undefined, parseInt(limitArg) || 10);
+      const results = blink.search(arg, { limit: parseInt(limitArg) || 10 });
       console.log(`## Capsule Search: ${arg}\n`);
       if (results.length === 0) {
         console.log(`No results found for '${arg}'`);

@@ -200,6 +200,7 @@ export async function scanCodebase(projectRootArg) {
         exports: ast.exports,
         imports: ast.imports,
         line_count: ast.line_count,
+        understanding_depth: 'stub',
         scannedAt: Date.now(),
       },
       tags: ['map', 'ast', role, ast.language],

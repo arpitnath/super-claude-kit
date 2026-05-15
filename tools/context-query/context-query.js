@@ -5,6 +5,7 @@
  */
 
 import { Blink } from 'blink-query';
+import { saveWithWikilinks } from '../../hooks/lib/wikilink-save.js';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
@@ -174,7 +175,7 @@ try {
         console.log('Usage: context-query save <namespace> <title> <summary> [type]');
         process.exit(1);
       }
-      blink.save({ namespace, title, summary, type, tags: [] });
+      saveWithWikilinks(blink, { namespace, title, summary, type, tags: [] }, getProjectHash());
       console.log(`Saved to ${namespace}: "${title}" [${type}]`);
       break;
     }
